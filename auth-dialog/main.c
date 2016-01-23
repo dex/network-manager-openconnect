@@ -935,6 +935,7 @@ static int get_config (GHashTable *options, GHashTable *secrets,
 	char *xmlconfig;
 	char *hostname;
 	char *group;
+	char *juniper;
 	char *csd;
 	char *sslkey, *cert;
 	char *csd_wrapper;
@@ -987,6 +988,11 @@ static int get_config (GHashTable *options, GHashTable *secrets,
 	cafile = g_hash_table_lookup (options, NM_OPENCONNECT_KEY_CACERT);
 	if (cafile)
 		openconnect_set_cafile(vpninfo, OC3DUP (cafile));
+
+	juniper = g_hash_table_lookup (options, NM_OPENCONNECT_KEY_JUNIPER_ENABLE);
+	if (juniper && !strcmp(juniper, "yes")) {
+		openconnect_set_protocol(vpninfo, "nc");
+	}
 
 	csd = g_hash_table_lookup (options, NM_OPENCONNECT_KEY_CSD_ENABLE);
 	if (csd && !strcmp(csd, "yes")) {

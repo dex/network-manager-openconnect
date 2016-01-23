@@ -181,6 +181,11 @@ import (NMVpnPluginUiInterface *iface, const char *path, GError **error)
 	if (buf)
 		nm_setting_vpn_add_data_item (s_vpn, NM_OPENCONNECT_KEY_PROXY, buf);
 
+	/* Juniper VPN */
+	bval = g_key_file_get_boolean (keyfile, "openconnect", "JuniperEnable", NULL);
+	if (bval)
+		nm_setting_vpn_add_data_item (s_vpn, NM_OPENCONNECT_KEY_JUNIPER_ENABLE, "yes");
+
 	/* Cisco Secure Desktop */
 	bval = g_key_file_get_boolean (keyfile, "openconnect", "CSDEnable", NULL);
 	if (bval)
@@ -231,6 +236,7 @@ export (NMVpnPluginUiInterface *iface,
 	const char *gateway = NULL;
 	const char *cacert = NULL;
 	const char *proxy = NULL;
+	gboolean juniper_enable = FALSE;
 	gboolean csd_enable = FALSE;
 	const char *csd_wrapper = NULL;
 	const char *usercert = NULL;
@@ -273,6 +279,10 @@ export (NMVpnPluginUiInterface *iface,
 	if (value && strlen (value))
 		proxy = value;
 
+	value = nm_setting_vpn_get_data_item (s_vpn, NM_OPENCONNECT_KEY_JUNIPER_ENABLE);
+	if (value && !strcmp (value, "yes"))
+		juniper_enable = TRUE;
+
 	value = nm_setting_vpn_get_data_item (s_vpn, NM_OPENCONNECT_KEY_CSD_ENABLE);
 	if (value && !strcmp (value, "yes"))
 		csd_enable = TRUE;
@@ -312,6 +322,7 @@ export (NMVpnPluginUiInterface *iface,
 		 "Host=%s\n"
 		 "CACert=%s\n"
 		 "Proxy=%s\n"
+		 "JuniperEnable=%s\n"
 		 "CSDEnable=%s\n"
 		 "CSDWrapper=%s\n"
 		 "UserCertificate=%s\n"
@@ -323,6 +334,7 @@ export (NMVpnPluginUiInterface *iface,
 		 /* Host */                  gateway,
 		 /* CA Certificate */        cacert,
 		 /* Proxy */                 proxy ? proxy : "",
+		 /* Juniper VPN */           juniper_enable ? "1" : "0",
 		 /* Cisco Secure Desktop */  csd_enable ? "1" : "0",
 		 /* CSD Wrapper Script */    csd_wrapper ? csd_wrapper : "",
 		 /* User Certificate */      usercert,
@@ -555,6 +567,16 @@ init_plugin_ui (OpenconnectPluginUiWidget *self, NMConnection *connection, GErro
 	}
 	g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (stuff_changed_cb), self);
 
+	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "juniper_button"));
+	if (!widget)
+		return FALSE;
+	if (s_vpn) {
+		value = nm_setting_vpn_get_data_item (s_vpn, NM_OPENCONNECT_KEY_JUNIPER_ENABLE);
+		if (value && !strcmp(value, "yes"))
+			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON (widget), TRUE);
+	}
+	g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (stuff_changed_cb), self);
+
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "csd_button"));
 	if (!widget)
 		return FALSE;
@@ -625,6 +647,10 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "fsid_button"));
 	str = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (widget))?"yes":"no";
 	nm_setting_vpn_add_data_item (s_vpn, NM_OPENCONNECT_KEY_PEM_PASSPHRASE_FSID, str);
+
+	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "juniper_button"));
+	str = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (widget))?"yes":"no";
+	nm_setting_vpn_add_data_item (s_vpn, NM_OPENCONNECT_KEY_JUNIPER_ENABLE, str);
 
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "csd_button"));
 	str = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (widget))?"yes":"no";

@@ -89,6 +89,7 @@ static ValidProperty valid_properties[] = {
 	{ NM_OPENCONNECT_KEY_MTU,         G_TYPE_STRING, 0, 0 },
 	{ NM_OPENCONNECT_KEY_PEM_PASSPHRASE_FSID, G_TYPE_BOOLEAN, 0, 0 },
 	{ NM_OPENCONNECT_KEY_PROXY,       G_TYPE_STRING, 0, 0 },
+	{ NM_OPENCONNECT_KEY_JUNIPER_ENABLE,  G_TYPE_BOOLEAN, 0, 0 },
 	{ NM_OPENCONNECT_KEY_CSD_ENABLE,  G_TYPE_BOOLEAN, 0, 0 },
 	{ NM_OPENCONNECT_KEY_CSD_WRAPPER, G_TYPE_STRING, 0, 0 },
 	{ NM_OPENCONNECT_KEY_TOKEN_MODE,  G_TYPE_STRING, 0, 0 },
@@ -365,7 +366,7 @@ nm_openconnect_start_openconnect_binary (NMOPENCONNECTPlugin *plugin,
 	GPtrArray *openconnect_argv;
 	GSource *openconnect_watch;
 	gint	stdin_fd;
-	const char *props_vpn_gw, *props_cookie, *props_cacert, *props_mtu, *props_gwcert, *props_proxy;
+	const char *props_vpn_gw, *props_cookie, *props_cacert, *props_mtu, *props_gwcert, *props_proxy, *props_juniper;
 	
 	/* Find openconnect */
 	openconnect_binary = openconnect_binary_paths;
@@ -412,6 +413,8 @@ nm_openconnect_start_openconnect_binary (NMOPENCONNECTPlugin *plugin,
 
 	props_proxy = nm_setting_vpn_get_data_item (s_vpn, NM_OPENCONNECT_KEY_PROXY);
 
+	props_juniper = nm_setting_vpn_get_data_item (s_vpn, NM_OPENCONNECT_KEY_JUNIPER_ENABLE);
+
 	openconnect_argv = g_ptr_array_new ();
 	g_ptr_array_add (openconnect_argv, (gpointer) (*openconnect_binary));
 
@@ -431,6 +434,10 @@ nm_openconnect_start_openconnect_binary (NMOPENCONNECTPlugin *plugin,
 	if (props_proxy && strlen(props_proxy)) {
 		g_ptr_array_add (openconnect_argv, (gpointer) "--proxy");
 		g_ptr_array_add (openconnect_argv, (gpointer) props_proxy);
+	}
+
+	if (props_juniper && !strcmp (props_juniper, "yes")) {
+		g_ptr_array_add (openconnect_argv, (gpointer) "--juniper");
 	}
 		
 	g_ptr_array_add (openconnect_argv, (gpointer) "--syslog");
